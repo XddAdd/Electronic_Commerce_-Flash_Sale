@@ -36,7 +36,7 @@ public class OrderController extends BaseController {
         //获取用户登录信息
         Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
         if (isLogin == null || isLogin == false) {
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR, "用户还未登录，不能下单");
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
         }
         UserModel userModel = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
 

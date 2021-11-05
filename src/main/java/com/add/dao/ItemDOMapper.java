@@ -1,6 +1,8 @@
 package com.add.dao;
 
 import com.add.databoject.ItemDO;
+import com.add.error.BusinessException;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -54,4 +56,7 @@ public interface ItemDOMapper {
      * @mbg.generated Wed Oct 13 21:16:46 CST 2021
      */
     int updateByPrimaryKey(ItemDO record);
+
+
+    int increaseSales(@Param("id") Integer id, @Param("amount") Integer amount) throws BusinessException;
 }
