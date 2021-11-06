@@ -12,6 +12,12 @@
 <body class="login">
     <div class="content">
         <h3 class="form-title">商品详情页</h3>
+        <div id="promoStartDateContainer" class="form-group">
+            <label style="color: blue" id="promoStatus" class="control-label">秒杀开始时间</label>
+            <div>
+                <label style="color: red" class="control-label" id="promoStartDate"/>
+            </div>
+        </div>
         <div class="form-group">
             <div>
                 <label class="control-label" id="title"/>
@@ -23,10 +29,16 @@
                 <label class="control-label" id="description"/>
             </div>
         </div>
-        <div class="form-group">
+        <div id="normalPriceContainer" class="form-group">
             <label class="control-label">价格</label>
             <div>
                 <label class="control-label" id="price"/>
+            </div>
+        </div>
+        <div id="promoPriceContainer" class="form-group">
+            <label style="color: red" class="control-label">秒杀价格</label>
+            <div>
+                <label style="color: red" class="control-label" id="promoPrice"/>
             </div>
         </div>
         <div class="form-group">
@@ -79,6 +91,7 @@
                     url:"http://localhost:8080/order/createorder",
                     data:{
                         "itemId": global_itemVO.id,
+                        "promoId": global_itemVO.promoId,
                         "amount": 1
                     },
                     xhrFields:{withCredentials:true},
@@ -113,6 +126,7 @@
                     if (data.status == "success") {
                         global_itemVO = data.datas;
                         reloadDom();
+                        setInterval(reloadDom, 1000);
                     } else {
                         alert("商品信息获取失败，原因是"+ data.datas.errMsg)
                     }
@@ -130,7 +144,35 @@
         $("#price").text(global_itemVO.price);
         $("#imgUrl").attr("src", global_itemVO.imgUrl);
         $("#stock").text(global_itemVO.stock);
-        $("#sales").text(global_itemVO.sales);
+        $("#sales").text(global_itemVO.sales)
+
+        if (global_itemVO.promoStatus == 1) {
+            //秒杀活动还未开始
+            var startTime = global_itemVO.startDate.replace(new RegExp("-", "gm"), "/");
+            startTime = new Date(startTime).getTime();
+            var nowTime = Date.parse(new Date());
+            var delta = (startTime - nowTime) / 1000;
+
+            if (delta <= 0) {
+                //活动已经开始
+                global_itemVO.promoStatus = 2;
+                reloadDom();
+            }
+            $("#promoStartDate").text("秒杀活动即将开始，开始时间为："+global_itemVO.startDate + "。倒计时 " + delta + " 秒");
+            $("#promoPrice").text(global_itemVO.promoPrice);
+
+            //控制下单按钮
+            $("#createorder").attr("disabled", true);
+        } else if (global_itemVO.promoStatus == 2) {
+            //秒杀活动正在进行中
+            $("#promoStartDate").text("秒杀活动正在进行中");
+            $("#promoPrice").text(global_itemVO.promoPrice);
+
+            $("#normalPriceContainer").hide();
+
+            //控制下单按钮
+            $("#createorder").attr("disabled", false);
+        }
     }
 
 

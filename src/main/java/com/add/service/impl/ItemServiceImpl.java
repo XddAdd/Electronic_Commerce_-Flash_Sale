@@ -7,7 +7,9 @@ import com.add.databoject.ItemStockDO;
 import com.add.error.BusinessException;
 import com.add.error.EmBusinessError;
 import com.add.service.ItemService;
+import com.add.service.PromoService;
 import com.add.service.model.ItemModel;
+import com.add.service.model.PromoModel;
 import com.add.validator.ValidationResult;
 import com.add.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
@@ -31,6 +33,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Resource
     private ItemStockDOMapper itemStockDOMapper;
+
+    @Autowired
+    private PromoService promoService;
 
     private ItemDO convertItemDOFromItemModel(ItemModel itemModel) {
         if (itemModel == null) {
@@ -99,6 +104,12 @@ public class ItemServiceImpl implements ItemService {
 
         //将dataobject->model
         ItemModel itemModel = this.convertItemModelFromDataObject(itemDO, itemStockDO);
+
+        //获取活动商品信息
+        PromoModel promoModel = promoService.getPromoByItemId(itemModel.getId());
+        if (promoModel != null && promoModel.getStatus() != 3) {
+            itemModel.setPromoModel(promoModel);
+        }
 
         return itemModel;
     }

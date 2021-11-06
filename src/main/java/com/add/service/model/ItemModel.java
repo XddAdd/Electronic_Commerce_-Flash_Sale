@@ -37,5 +37,8 @@ public class ItemModel {
     @NotNull(message = "图片信息不能为空")
     private String imgUrl;
 
+    //聚合模型,如果PromoModel不为空，则表示拥有还未结束的活动
+    private PromoModel promoModel;
+
 
 }
