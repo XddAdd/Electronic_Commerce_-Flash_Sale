@@ -8,7 +8,10 @@ import com.add.service.OrderService;
 import com.add.service.model.ItemModel;
 import com.add.service.model.OrderModel;
 import com.add.service.model.UserModel;
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +29,8 @@ public class OrderController extends BaseController {
     @Autowired
     private HttpServletRequest httpServletRequest;
 
-
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //下单请求
     @RequestMapping(value = "/createorder", method={RequestMethod.POST}, consumes={CONTENT_TYPE_FORMED})
@@ -35,11 +39,15 @@ public class OrderController extends BaseController {
                                         @RequestParam(name = "promoId", required = false)Integer promoId,
                                        @RequestParam(name = "amount") Integer amount) throws BusinessException {
         //获取用户登录信息
-        Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
-        if (isLogin == null || isLogin == false) {
-            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
+        //Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
+        String token = httpServletRequest.getParameterMap().get("token")[0];
+        if (StringUtils.isEmpty(token)) {
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN, "用户未登录，不能下单");
         }
-        UserModel userModel = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(token);
+        if (userModel == null) {
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN, "用户未登录，不能下单");
+        }
 
 
         OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);

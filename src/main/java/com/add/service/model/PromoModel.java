@@ -4,11 +4,12 @@ import lombok.Data;
 import lombok.ToString;
 import org.joda.time.DateTime;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @ToString
-public class PromoModel {
+public class PromoModel implements Serializable {
     private Integer id;
 
     //秒杀活动名称

@@ -5,11 +5,12 @@ import lombok.ToString;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @ToString
-public class ItemModel {
+public class ItemModel implements Serializable {
 
     private Integer id;
 

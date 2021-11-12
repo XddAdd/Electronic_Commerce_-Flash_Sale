@@ -6,11 +6,13 @@ import com.add.error.EmBusinessError;
 import com.add.response.CommonReturnType;
 import com.add.service.UserService;
 import com.add.service.model.UserModel;
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.security.MD5Encoder;
 import org.omg.CORBA.INTERNAL;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Controller("user")
 @RequestMapping("/user")
@@ -37,6 +41,9 @@ public class UserController extends BaseController{
 
     @Autowired
     private HttpServletRequest httpServletRequest;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //用户登录接口
     @RequestMapping(value = "/login", method={RequestMethod.POST}, consumes={CONTENT_TYPE_FORMED})
@@ -51,11 +58,20 @@ public class UserController extends BaseController{
         //用户登录服务,校验用户登录是否合法
         UserModel userModel = userService.validateLogin(telephone, this.encodeByMd5(password));
 
-        //登录凭证加入到用户登录成功的session内
-        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
-        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+        //修改成若用户登录验证成功后将对应的登录信息和登录凭证一起存入redis中
+        String uuidToken = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-","");
 
-        return CommonReturnType.create(null);
+        //token和用户登录态建立联系
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+
+        //登录凭证加入到用户登录成功的session内
+//        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
+//        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+
+        //发给前端token
+        return CommonReturnType.create(uuidToken);
     }
 
 
