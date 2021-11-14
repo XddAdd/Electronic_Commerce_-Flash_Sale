@@ -3,6 +3,7 @@ package com.add.controller;
 import com.add.controller.viewobject.ItemVO;
 import com.add.error.BusinessException;
 import com.add.response.CommonReturnType;
+import com.add.service.CacheService;
 import com.add.service.ItemService;
 import com.add.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
@@ -27,6 +28,9 @@ public class ItemController extends BaseController{
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
 
 
     //创建商品
@@ -55,15 +59,24 @@ public class ItemController extends BaseController{
     @RequestMapping(value = "/get", method={RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id) throws BusinessException {
-        //根据商品id先去redis内获取
-        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+        //取本地缓存
+        ItemModel itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
         if (itemModel == null) {
-            itemModel = itemService.getItemById(id);
+            //根据商品id先去redis内获取
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
 
-            //itemModel缓存近redis
-            redisTemplate.opsForValue().set("item_"+id, itemModel);
-            redisTemplate.expire("item_"+id, 10, TimeUnit.MINUTES);
+            //redis不存在，从数据库取
+            if (itemModel == null) {
+                itemModel = itemService.getItemById(id);
+
+                //itemModel缓存进redis
+                redisTemplate.opsForValue().set("item_"+id, itemModel);
+                redisTemplate.expire("item_"+id, 10, TimeUnit.MINUTES);
+            }
+            //itemModel缓存进本地缓存
+            cacheService.setCommonCache("item_"+id, itemModel);
         }
+
 
         ItemVO itemVo = this.convertItemVOFromItemModel(itemModel);
 
